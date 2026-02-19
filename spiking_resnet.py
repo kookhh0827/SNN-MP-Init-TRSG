@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from ta_srgd import taLIFNode
+from trlif import trLIFNode
 from spikingjelly.activation_based import layer
 
 # This code is based on https://github.com/fangwei123456/Spike-Element-Wise-ResNet/blob/main/imagenet/spiking_resnet.py
@@ -36,7 +36,7 @@ class BasicBlock(nn.Module):
             conv3x3(inplanes, planes, stride),
             norm_layer(planes)
         )
-        self.sn1 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn1 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
 
         self.conv2 = layer.SeqToANNContainer(
             conv3x3(planes, planes),
@@ -44,7 +44,7 @@ class BasicBlock(nn.Module):
         )
         self.downsample = nn.Sequential()
         self.stride = stride
-        self.sn2 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn2 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
 
         if downsample is not None:
             self.downsample = downsample
@@ -66,13 +66,13 @@ class Bottleneck(nn.Module):
             conv1x1(inplanes, width),
             norm_layer(width)
         )
-        self.sn1 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn1 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
 
         self.conv2 = layer.SeqToANNContainer(
             conv3x3(width, width, stride, groups, dilation),
             norm_layer(width)
         )
-        self.sn2 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn2 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
 
         self.conv3 = layer.SeqToANNContainer(
             conv1x1(width, planes * self.expansion),
@@ -80,7 +80,7 @@ class Bottleneck(nn.Module):
         )
         self.downsample = nn.Sequential()
         self.stride = stride
-        self.sn3 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn3 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
 
         if downsample is not None:
             self.downsample = downsample
@@ -125,7 +125,7 @@ class SpikingResNet(nn.Module):
         self.bn1 = norm_layer(self.inplanes)
 
 
-        self.sn1 = taLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
+        self.sn1 = trLIFNode(init_thr=init_thr, init_tau=init_tau, step_mode='m', v_reset=None, detach_reset=False, decay_input=True)
         self.maxpool = layer.SeqToANNContainer(nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
 
         self.layer1 = self._make_layer(block, 64, layers[0])
