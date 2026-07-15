@@ -45,7 +45,12 @@ def ref_firing_function(thr, v):
 
 
 def trsg_ste_reference(v, thr, sg):
-    """Principled STE realization: O = V_thr * S_ste, S_ste = STE(H, Phi)."""
+    """Principled STE realization: O = V_thr * S_ste, S_ste = STE(H, Phi).
+
+    Assumes phi == Phi' (the surrogate's backward is the exact derivative of its
+    primitive_function), which holds for all standard SpikingJelly shapes. TrSG
+    itself only uses phi and does not rely on this identity.
+    """
     x = v / thr - 1.0
     phi_primitive = sg.primitive_function(x, **sg._sg_params)
     spike = heaviside(v - thr)

@@ -20,6 +20,13 @@ Combines three components from Kook et al. (WACV 2026, arXiv:2511.08708):
 Only soft reset (``v_reset=None``) is supported, matching the paper. Because the
 firing output is already scaled by ``V_thr``, the soft reset subtracts the
 scaled spike directly (``v = v - spike``), not ``v - V_thr * spike``.
+
+Note: like every stateful SpikingJelly ``MemoryModule`` neuron, MP-Init's
+running-mean update does not work under ``torch.nn.DataParallel`` -- the
+per-simulation state lives on the replicas and is never gathered back to the
+primary module, so the EMA (gated on ``count > 0`` in ``reset``) never fires on
+the primary. Use ``DistributedDataParallel`` (one process per GPU); single-GPU
+training is unaffected.
 """
 
 import math
@@ -132,7 +139,9 @@ class TrLIFNode(BaseNode):
         return ("torch",)
 
     def v_threshold_value(self) -> torch.Tensor:
-        return F.softplus(self.thr_param)
+        # softplus is positive but can underflow to exactly 0 in float32 for
+        # very negative thr_param; floor it so v / V_thr never divides by zero.
+        return F.softplus(self.thr_param).clamp_min(1e-8)
 
     def tau_value(self) -> torch.Tensor:
         return 1.0 / self.w.sigmoid()

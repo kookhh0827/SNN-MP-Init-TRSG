@@ -67,14 +67,13 @@ class trsg_function(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(m, v_threshold, primitive_function, backward_function, sg_params):
+    def forward(m, v_threshold, backward_function, sg_params):
         return v_threshold * heaviside(m - v_threshold)
 
     @staticmethod
     def setup_context(ctx, inputs, output):
-        m, v_threshold, primitive_function, backward_function, sg_params = inputs
+        m, v_threshold, backward_function, sg_params = inputs
         ctx.save_for_backward(m, v_threshold)
-        ctx.primitive_function = primitive_function
         ctx.backward_function = backward_function
         ctx.sg_params = sg_params
 
@@ -91,7 +90,7 @@ class trsg_function(torch.autograd.Function):
             grad_vth = grad_output * spike - grad_m * (x + 1.0)
             # Reduce to v_threshold's shape (typically a 0-dim learnable scalar).
             grad_v_threshold = _sum_to(grad_vth, v_threshold.shape)
-        return grad_m, grad_v_threshold, None, None, None
+        return grad_m, grad_v_threshold, None, None
 
 
 def _sum_to(grad: torch.Tensor, shape: torch.Size) -> torch.Tensor:
@@ -147,13 +146,7 @@ class TrSG(nn.Module):
         if not isinstance(v_threshold, torch.Tensor):
             v_threshold = torch.as_tensor(v_threshold, dtype=v.dtype, device=v.device)
         sg = self.surrogate_function
-        return trsg_function.apply(
-            v,
-            v_threshold,
-            sg.primitive_function,
-            sg.backward,
-            sg._sg_params,
-        )
+        return trsg_function.apply(v, v_threshold, sg.backward, sg._sg_params)
 
     def extra_repr(self) -> str:
         return f"surrogate_function={self.surrogate_function}"
